@@ -2,6 +2,8 @@
 #include <WiFi.h>
 #include "DHTesp.h"
 
+#define LED_BUILTIN 2
+
 const int DHT_PIN = 15;
 
 WiFiClient espClient;
@@ -16,6 +18,10 @@ void setup() {
   setupWiFi();
   setupMqtt();
   dhtSensor.setup(DHT_PIN, DHTesp::DHT22);
+
+  pinMode(LED_BUILTIN,OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
+
 
 
 }
@@ -60,6 +66,9 @@ void connectToBroker(){
     Serial.print("Attempting MQTT connection..");
     if (mqttClient.connect("ESP32-34534")){
       Serial.println("Connected");
+
+      mqttClient.subscribe("Main-ON-OFF");
+
     }
     else{
       Serial.print("Failed");
@@ -90,7 +99,19 @@ void receiveCallback(char* topic, byte* payload, unsigned int length){
 
   }
   
-  Serial.pritln();
+  Serial.println();
+
+  if ( strcmp(topic, "Main-ON-OFF") == 0 ){    //check the topic
+    if (payloadCharAr[0]=='1'){
+      digitalWrite(LED_BUILTIN,HIGH);
+    }
+    else{
+      digitalWrite(LED_BUILTIN,LOW);
+
+    }
+
+  }
+
 }
 
 
