@@ -1,10 +1,14 @@
 #include <PubSubClient.h>
 #include <WiFi.h>
+#include <ESP32Servo.h>
 #include "DHTesp.h"
 
 #define LED_BUILTIN 2
+#define LDR_PIN 34
+#define BUZZ_PIN 4
+#define DHT_PIN 15
+#define SERVO_PIN 18
 
-const int DHT_PIN = 15;
 
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
@@ -12,6 +16,9 @@ DHTesp dhtSensor;
 
 char tempAr[6];
 char humidityAr[6];
+char IntensityAr[6];
+bool  buzzerON = 0 ;
+
 
 void setup() {
   Serial.begin(115200);
@@ -27,19 +34,34 @@ void setup() {
 }
 
 void loop() {
+  
+
   if (!mqttClient.connected()){
     connectToBroker();
   }
 
   mqttClient.loop();
 
+  
+  updateIntensity();
+
   updateTempAndHumidity();
-  Serial.println(tempAr);
-  Serial.println(humidityAr);
+  //Serial.println(tempAr);
+  //Serial.println(humidityAr);
+  //Serial.println(IntensityAr);
+
+
+  
+  checkBuzzer(256,1);
+  
+
   mqttClient.publish("TEMP",tempAr);
   delay(1000);
   mqttClient.publish("HUMIDITY",humidityAr);
   delay(1000);
+  mqttClient.publish("INTENSITY",IntensityAr);
+  //delay(1000);
+  
 
 }
 
@@ -104,9 +126,12 @@ void receiveCallback(char* topic, byte* payload, unsigned int length){
   if ( strcmp(topic, "Main-ON-OFF") == 0 ){    //check the topic
     if (payloadCharAr[0]=='1'){
       digitalWrite(LED_BUILTIN,HIGH);
+      buzzerON = 1;
+      
     }
     else{
       digitalWrite(LED_BUILTIN,LOW);
+      buzzerON = 0;
 
     }
 
@@ -115,6 +140,30 @@ void receiveCallback(char* topic, byte* payload, unsigned int length){
 }
 
 
+void updateIntensity(){
+  delay(10); // this speeds up the simulation
+  int LDRreading = analogRead(LDR_PIN);
+  float LDRvalue = map(LDRreading, 4095, 0, 0,1000); 
+  float mappedIntensity = LDRvalue/1000;
+  String(mappedIntensity,4).toCharArray(IntensityAr,6);
+  Serial.println(mappedIntensity);
+ 
+}
+
+
+  
+
+void checkBuzzer(unsigned int freq , unsigned int del){
+   if ( buzzerON == 1 ){    
+      tone(BUZZ_PIN, freq);
+      delay(del*1000);
+      noTone(BUZZ_PIN);
+      delay(del*1000);
+    }
+    else if ( buzzerON == 0 ){
+      noTone(BUZZ_PIN);  
+    }
+  }
 
 
 
