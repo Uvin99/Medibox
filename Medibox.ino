@@ -18,6 +18,11 @@ char tempAr[6];
 char humidityAr[6];
 char IntensityAr[6];
 bool  buzzerON = 0 ;
+bool isBuzContinous = 0 ;
+int Delay = 1;   //default
+int Frequency = 256;   //default
+int minAngle = 30;   //default
+float controlFactor = 0.75; //default
 
 
 void setup() {
@@ -28,7 +33,8 @@ void setup() {
 
   pinMode(LED_BUILTIN,OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-
+  mqttClient.publish("Min-Angle1",minAngleAr);
+  mqttClient.publish("CF1",CFAr);
 
 
 }
@@ -52,15 +58,19 @@ void loop() {
 
 
   
-  checkBuzzer(256,1);
+  checkBuzzer(Frequency,Delay);
+  //Serial.println(controlFactor);
+  Serial.println(minAngle);
+  //Serial.println(isBuzContinous);
   
 
   mqttClient.publish("TEMP",tempAr);
-  delay(1000);
+  delay(100);
   mqttClient.publish("HUMIDITY",humidityAr);
-  delay(1000);
+  delay(100);
   mqttClient.publish("INTENSITY",IntensityAr);
-  //delay(1000);
+  //delay(100);
+  
   
 
 }
@@ -83,13 +93,23 @@ void setupMqtt(){
 
 }
 
-void connectToBroker(){
+void connectToBroker(){       //subscribe to topics
   while (!mqttClient.connected()){
     Serial.print("Attempting MQTT connection..");
     if (mqttClient.connect("ESP32-34534")){
       Serial.println("Connected");
 
       mqttClient.subscribe("Main-ON-OFF");
+      delay(10);
+      mqttClient.subscribe("Delay");
+      delay(10);
+      mqttClient.subscribe("Freq");
+      delay(10);
+      mqttClient.subscribe("dropDown");
+      delay(10);
+      mqttClient.subscribe("Min-Angle");
+      delay(10);
+      mqttClient.subscribe("CF");
 
     }
     else{
@@ -136,8 +156,39 @@ void receiveCallback(char* topic, byte* payload, unsigned int length){
     }
 
   }
+  if ( strcmp(topic, "dropDown") == 0 ){    //check the topic
+    if (payloadCharAr[0]=='1'){
+      isBuzContinous = 0; 
+      Delay = 0;
+      
+    }
+    else{
+      isBuzContinous = 1; 
 
-}
+    }
+
+  }
+
+  if ( strcmp(topic, "Delay") == 0 ){    //check the topic
+      Delay = atoi((char*)payload);
+    }
+
+  if ( strcmp(topic, "Freq") == 0 ){    //check the topic
+    Frequency = atoi((char*)payload);
+  }
+
+  if ( strcmp(topic, "Min-Angle") == 0 ){    //check the topic
+    minAngle = atoi((char*)payload);
+    if (minAngle > 100){
+      minAngle =  minAngle/10 ;
+    }
+  }
+
+  if ( strcmp(topic, "CF") == 0 ){    //check the topic
+    controlFactor = atof((char*)payload);
+  }
+
+  }
 
 
 void updateIntensity(){
@@ -150,16 +201,21 @@ void updateIntensity(){
  
 }
 
-
   
-
 void checkBuzzer(unsigned int freq , unsigned int del){
    if ( buzzerON == 1 ){    
+
+      if ( isBuzContinous == 1 ){    
       tone(BUZZ_PIN, freq);
-      delay(del*1000);
-      noTone(BUZZ_PIN);
-      delay(del*1000);
     }
+
+      else if (isBuzContinous == 0)   // repeated on off
+        tone(BUZZ_PIN, freq);
+        delay(1000);
+        noTone(BUZZ_PIN);
+        delay(del*1000);
+      }
+
     else if ( buzzerON == 0 ){
       noTone(BUZZ_PIN);  
     }
