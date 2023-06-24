@@ -13,6 +13,7 @@
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 DHTesp dhtSensor;
+Servo servo;
 
 char tempAr[6];
 char humidityAr[6];
@@ -23,6 +24,8 @@ int Delay = 1;   //default
 int Frequency = 256;   //default
 int minAngle = 30;   //default
 float controlFactor = 0.75; //default
+float Intensity;
+int servoAngle = 0;
 
 
 void setup() {
@@ -30,12 +33,11 @@ void setup() {
   setupWiFi();
   setupMqtt();
   dhtSensor.setup(DHT_PIN, DHTesp::DHT22);
+  servo.attach(SERVO_PIN, 500, 2400);
 
   pinMode(LED_BUILTIN,OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
-  mqttClient.publish("Min-Angle1",minAngleAr);
-  mqttClient.publish("CF1",CFAr);
-
+  
 
 }
 
@@ -63,6 +65,7 @@ void loop() {
   Serial.println(minAngle);
   //Serial.println(isBuzContinous);
   
+  adjustServo();
 
   mqttClient.publish("TEMP",tempAr);
   delay(100);
@@ -195,9 +198,9 @@ void updateIntensity(){
   delay(10); // this speeds up the simulation
   int LDRreading = analogRead(LDR_PIN);
   float LDRvalue = map(LDRreading, 4095, 0, 0,1000); 
-  float mappedIntensity = LDRvalue/1000;
-  String(mappedIntensity,4).toCharArray(IntensityAr,6);
-  Serial.println(mappedIntensity);
+  Intensity = LDRvalue/1000;
+  String(Intensity,4).toCharArray(IntensityAr,6);
+  Serial.println(Intensity);
  
 }
 
@@ -222,5 +225,11 @@ void checkBuzzer(unsigned int freq , unsigned int del){
   }
 
 
+void adjustServo(){
+    servoAngle = minAngle + (180 - minAngle)*Intensity*controlFactor  ;  // calculating servo angle
+    servo.write(servoAngle);
+    delay(500);
+
+}
 
 
