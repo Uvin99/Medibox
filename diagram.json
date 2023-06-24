@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "author": "Uvin Anushanga",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": -81.71, "left": 2.1, "attrs": {} },
+    {
+      "type": "wokwi-dht22",
+      "id": "dht1",
+      "top": -73.33,
+      "left": 210.91,
+      "attrs": { "humidity": "20.5", "temperature": "12.4" }
+    },
+    {
+      "type": "wokwi-photoresistor-sensor",
+      "id": "ldr1",
+      "top": -186.92,
+      "left": -257.32,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-buzzer",
+      "id": "bz1",
+      "top": -209.7,
+      "left": 196.82,
+      "rotate": 90,
+      "attrs": { "volume": "0.1" }
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo1",
+      "top": -245.39,
+      "left": 322.58,
+      "rotate": 270,
+      "attrs": {}
+    }
+  ],
+  "connections": [
+    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+    [ "dht1:SDA", "esp:D15", "green", [ "v0" ] ],
+    [ "dht1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "dht1:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "ldr1:VCC", "esp:VIN", "red", [ "h66.8", "v251.43" ] ],
+    [ "ldr1:GND", "esp:GND.2", "black", [ "h56.19", "v220.2" ] ],
+    [ "ldr1:AO", "esp:D34", "green", [ "h76.44", "v83.66" ] ],
+    [ "bz1:1", "esp:GND.1", "black", [ "h-60.56", "v244.21" ] ],
+    [ "bz1:2", "esp:D4", "gray", [ "h-44.36", "v212.72" ] ],
+    [ "servo1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "servo1:V+", "esp:VIN", "red", [ "v238.45", "h-418.14", "v-65.97" ] ],
+    [ "servo1:PWM", "esp:D18", "green", [ "v10.42", "h-283.05", "v22.49" ] ]
+  ],
+  "dependencies": {}
+}
