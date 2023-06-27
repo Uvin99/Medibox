@@ -1,6 +1,7 @@
 #include <PubSubClient.h>
 #include <WiFi.h>
 #include <ESP32Servo.h>
+#include <RTClib.h>
 #include "DHTesp.h"
 
 #define LED_BUILTIN 2
@@ -9,97 +10,97 @@
 #define DHT_PIN 15
 #define SERVO_PIN 18
 
-
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 DHTesp dhtSensor;
 Servo servo;
 
+
 char tempAr[6];
 char humidityAr[6];
 char IntensityAr[6];
-bool  buzzerON = 0 ;
-bool isBuzContinous = 0 ;
-int Delay = 1;   //default
-int Frequency = 256;   //default
-int minAngle = 30;   //default
-float controlFactor = 0.75; //default
+bool buzzerON = 0;
+bool isBuzContinous = 0;
+int Delay = 1;              // default
+int Frequency = 256;        // default
+int minAngle = 30;          // default
+float controlFactor = 0.75; // default
 float Intensity;
 int servoAngle = 0;
 
 
-void setup() {
+
+void setup()
+{
   Serial.begin(115200);
   setupWiFi();
   setupMqtt();
   dhtSensor.setup(DHT_PIN, DHTesp::DHT22);
   servo.attach(SERVO_PIN, 500, 2400);
-
-  pinMode(LED_BUILTIN,OUTPUT);
-  digitalWrite(LED_BUILTIN, LOW);
   
-
+  pinMode(LED_BUILTIN, OUTPUT);
+  digitalWrite(LED_BUILTIN, LOW);
 }
 
-void loop() {
-  
+void loop()
+{
 
-  if (!mqttClient.connected()){
+  if (!mqttClient.connected())
+  {
     connectToBroker();
   }
 
   mqttClient.loop();
 
-  
   updateIntensity();
 
   updateTempAndHumidity();
-  //Serial.println(tempAr);
-  //Serial.println(humidityAr);
-  //Serial.println(IntensityAr);
-
+  // Serial.println(tempAr);
+  // Serial.println(humidityAr);
+  // Serial.println(IntensityAr);
 
   
-  checkBuzzer(Frequency,Delay);
-  //Serial.println(controlFactor);
-  Serial.println(minAngle);
-  //Serial.println(isBuzContinous);
-  
+
+  checkBuzzer(Frequency, Delay);
+  // Serial.println(controlFactor);
+  //Serial.println(minAngle);
+  // Serial.println(isBuzContinous);
+
   adjustServo();
 
-  mqttClient.publish("TEMP",tempAr);
+  mqttClient.publish("TEMP", tempAr);
   delay(100);
-  mqttClient.publish("HUMIDITY",humidityAr);
+  mqttClient.publish("HUMIDITY", humidityAr);
   delay(100);
-  mqttClient.publish("INTENSITY",IntensityAr);
-  //delay(100);
-  
-  
-
+  mqttClient.publish("INTENSITY", IntensityAr);
+  // delay(100);
 }
 
+void setupWiFi()
+{
+  WiFi.begin("Wokwi-GUEST", "");
 
-void setupWiFi(){
-    WiFi.begin("Wokwi-GUEST","");
-
-    while (WiFi.status() != WL_CONNECTED){
-      delay(500);
-      Serial.print(".");
-
-    }
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    delay(500);
+    Serial.print(".");
+  }
   Serial.println("");
 }
 
-void setupMqtt(){
-  mqttClient.setServer("test.mosquitto.org",1883);
+void setupMqtt()
+{
+  mqttClient.setServer("test.mosquitto.org", 1883);
   mqttClient.setCallback(receiveCallback);
-
 }
 
-void connectToBroker(){       //subscribe to topics
-  while (!mqttClient.connected()){
+void connectToBroker()
+{ // subscribe to topics
+  while (!mqttClient.connected())
+  {
     Serial.print("Attempting MQTT connection..");
-    if (mqttClient.connect("ESP32-34534")){
+    if (mqttClient.connect("ESP32-34534"))
+    {
       Serial.println("Connected");
 
       mqttClient.subscribe("Main-ON-OFF");
@@ -113,9 +114,12 @@ void connectToBroker(){       //subscribe to topics
       mqttClient.subscribe("Min-Angle");
       delay(10);
       mqttClient.subscribe("CF");
-
+      delay(10);
+      mqttClient.subscribe("buzz");
+      
     }
-    else{
+    else
+    {
       Serial.print("Failed");
       Serial.print(mqttClient.state());
       delay(5000);
@@ -123,113 +127,134 @@ void connectToBroker(){       //subscribe to topics
   }
 }
 
-
-void updateTempAndHumidity(){
-  TempAndHumidity data =  dhtSensor.getTempAndHumidity();
-  String(data.temperature,2).toCharArray(tempAr,6);
-  String(data.humidity,2).toCharArray(humidityAr,6);
-
+void updateTempAndHumidity()
+{
+  TempAndHumidity data = dhtSensor.getTempAndHumidity();
+  String(data.temperature, 2).toCharArray(tempAr, 6);
+  String(data.humidity, 2).toCharArray(humidityAr, 6);
 }
 
-void receiveCallback(char* topic, byte* payload, unsigned int length){
+void receiveCallback(char *topic, byte *payload, unsigned int length)
+{
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
 
   char payloadCharAr[length];
 
-  for(int i = 0; i < length; i++ ){
+  for (int i = 0; i < length; i++)
+  {
     Serial.print((char)payload[i]);
     payloadCharAr[i] = (char)payload[i];
-
   }
-  
+
   Serial.println();
 
-  if ( strcmp(topic, "Main-ON-OFF") == 0 ){    //check the topic
-    if (payloadCharAr[0]=='1'){
-      digitalWrite(LED_BUILTIN,HIGH);
+  if (strcmp(topic, "Main-ON-OFF") == 0)
+  { // check the topic
+    if (payloadCharAr[0] == '1')
+    {
+      digitalWrite(LED_BUILTIN, HIGH);
       buzzerON = 1;
-      
     }
-    else{
-      digitalWrite(LED_BUILTIN,LOW);
+    else
+    {
+      digitalWrite(LED_BUILTIN, LOW);
       buzzerON = 0;
-
     }
-
   }
-  if ( strcmp(topic, "dropDown") == 0 ){    //check the topic
-    if (payloadCharAr[0]=='1'){
-      isBuzContinous = 0; 
+
+
+
+  if (strcmp(topic, "buzz") == 0)
+  { // check the topic
+    buzzerON = 1;
+  }
+
+
+
+  if (strcmp(topic, "dropDown") == 0)
+  { // check the topic
+    if (payloadCharAr[0] == '1')
+    {
+      isBuzContinous = 0;
       Delay = 0;
-      
     }
-    else{
-      isBuzContinous = 1; 
-
-    }
-
-  }
-
-  if ( strcmp(topic, "Delay") == 0 ){    //check the topic
-      Delay = atoi((char*)payload);
-    }
-
-  if ( strcmp(topic, "Freq") == 0 ){    //check the topic
-    Frequency = atoi((char*)payload);
-  }
-
-  if ( strcmp(topic, "Min-Angle") == 0 ){    //check the topic
-    minAngle = atoi((char*)payload);
-    if (minAngle > 100){
-      minAngle =  minAngle/10 ;
+    else
+    {
+      isBuzContinous = 1;
     }
   }
 
-  if ( strcmp(topic, "CF") == 0 ){    //check the topic
-    controlFactor = atof((char*)payload);
+  if (strcmp(topic, "Delay") == 0)
+  { // check the topic
+    Delay = atoi((char *)payload);
   }
 
+  if (strcmp(topic, "Freq") == 0)
+  { // check the topic
+    Frequency = atoi((char *)payload);
   }
 
+  if (strcmp(topic, "Min-Angle") == 0)
+  { // check the topic
+    minAngle = atoi((char *)payload);
+    if (minAngle > 100)
+    {
+      minAngle = minAngle / 10;
+    }
+  }
 
-void updateIntensity(){
+  if (strcmp(topic, "CF") == 0)
+  { // check the topic
+    controlFactor = atof((char *)payload);
+  }
+}
+
+void updateIntensity()
+{
   delay(10); // this speeds up the simulation
   int LDRreading = analogRead(LDR_PIN);
-  float LDRvalue = map(LDRreading, 4095, 0, 0,1000); 
-  Intensity = LDRvalue/1000;
-  String(Intensity,4).toCharArray(IntensityAr,6);
+  float LDRvalue = map(LDRreading, 4095, 0, 0, 1000);
+  Intensity = LDRvalue / 1000;
+  String(Intensity, 4).toCharArray(IntensityAr, 6);
   Serial.println(Intensity);
- 
 }
 
-  
-void checkBuzzer(unsigned int freq , unsigned int del){
-   if ( buzzerON == 1 ){    
+void checkBuzzer(unsigned int freq, unsigned int del)
+{
+  if (buzzerON == 1)
+  {
 
-      if ( isBuzContinous == 1 ){    
+    if (isBuzContinous == 1)
+
+    {
+      //  for (int i = 0; i < 500; i++)
+      //   {
+           tone(BUZZ_PIN, freq);
+      //     delay(1000);
+      //   }
+
+      
+    }
+
+    else if (isBuzContinous == 0) // repeated on off
       tone(BUZZ_PIN, freq);
-    }
-
-      else if (isBuzContinous == 0)   // repeated on off
-        tone(BUZZ_PIN, freq);
-        delay(1000);
-        noTone(BUZZ_PIN);
-        delay(del*1000);
-      }
-
-    else if ( buzzerON == 0 ){
-      noTone(BUZZ_PIN);  
-    }
+    delay(1000);
+    noTone(BUZZ_PIN);
+    delay(del * 1000);
   }
 
-
-void adjustServo(){
-    servoAngle = minAngle + (180 - minAngle)*Intensity*controlFactor  ;  // calculating servo angle
-    servo.write(servoAngle);
-    delay(500);
-
+  else if (buzzerON == 0)
+  {
+    noTone(BUZZ_PIN);
+  }
 }
 
+void adjustServo()
+{
+  servoAngle = minAngle + (180 - minAngle) * Intensity * controlFactor; // calculating servo angle
+  servo.write(servoAngle);
+  delay(500);
+}
 
