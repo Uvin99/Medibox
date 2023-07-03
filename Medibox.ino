@@ -149,6 +149,7 @@ void receiveCallback(char *topic, byte *payload, unsigned int length)
   }
 
   Serial.println();
+  
 
   if (strcmp(topic, "Main-ON-OFF") == 0)
   { // check the topic
@@ -166,37 +167,48 @@ void receiveCallback(char *topic, byte *payload, unsigned int length)
 
 
 
-  if (strcmp(topic, "buzz") == 0)
+  else if (strcmp(topic, "buzz") == 0) // when alarm is tiggered
   { // check the topic
-    buzzerON = 1;
+    if (length == 1)         // if an alram is triggered the payload length = 1 
+        {
+           buzzerON = 1;
+        }
+    else
+        {
+          
+          buzzerON = 0;
+        }
+
+    
   }
 
 
 
-  if (strcmp(topic, "dropDown") == 0)
+  else if (strcmp(topic, "dropDown") == 0)
   { // check the topic
     if (payloadCharAr[0] == '1')
     {
-      isBuzContinous = 0;
-      Delay = 0;
+      isBuzContinous = 0;           //repeated on-off
+      
     }
     else
     {
-      isBuzContinous = 1;
+      isBuzContinous = 1;         //continuous -> no delay
+      Delay = 0;
     }
   }
 
-  if (strcmp(topic, "Delay") == 0)
+ else  if (strcmp(topic, "Delay") == 0)
   { // check the topic
     Delay = atoi((char *)payload);
   }
 
-  if (strcmp(topic, "Freq") == 0)
+ else  if (strcmp(topic, "Freq") == 0)
   { // check the topic
     Frequency = atoi((char *)payload);
   }
 
-  if (strcmp(topic, "Min-Angle") == 0)
+  else if (strcmp(topic, "Min-Angle") == 0)
   { // check the topic
     minAngle = atoi((char *)payload);
     if (minAngle > 100)
@@ -205,7 +217,7 @@ void receiveCallback(char *topic, byte *payload, unsigned int length)
     }
   }
 
-  if (strcmp(topic, "CF") == 0)
+  else if (strcmp(topic, "CF") == 0)
   { // check the topic
     controlFactor = atof((char *)payload);
   }
@@ -229,11 +241,13 @@ void checkBuzzer(unsigned int freq, unsigned int del)
     if (isBuzContinous == 1)
 
     {
-      //  for (int i = 0; i < 500; i++)
-      //   {
-           tone(BUZZ_PIN, freq);
-      //     delay(1000);
-      //   }
+        for (int i = 0; i < 500; i++)
+        {
+          tone(BUZZ_PIN, freq);
+          //delay(100);
+          //mqttClient.setCallback(receiveCallback);
+          
+         }
 
       
     }
