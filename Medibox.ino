@@ -3,6 +3,7 @@
 #include <ESP32Servo.h>
 #include <RTClib.h>
 #include "DHTesp.h"
+#include <LiquidCrystal_I2C.h>
 
 #define LED_BUILTIN 2
 #define LDR_PIN 34
@@ -14,20 +15,31 @@ WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 DHTesp dhtSensor;
 Servo servo;
+LiquidCrystal_I2C LCD = LiquidCrystal_I2C(0x27, 20, 4);
 
 
 char tempAr[6];
 char humidityAr[6];
 char IntensityAr[6];
 bool buzzerON = 0;
+bool mainON = 0;
 bool isBuzContinous = 0;
-int Delay = 1;              // default
-int Frequency = 256;        // default
+int Delay =1  ;              // default
+int Frequency = 300;        // default
 int minAngle = 30;          // default
 float controlFactor = 0.75; // default
 float Intensity;
 int servoAngle = 0;
 
+
+
+
+String date;
+String Al1 =  "18:01";
+String Al2 = "18:01";
+String Al3 =  "18:01";
+
+//String DTar[4] = {date , Al1, Al2,Al3};
 
 
 void setup()
@@ -37,6 +49,9 @@ void setup()
   setupMqtt();
   dhtSensor.setup(DHT_PIN, DHTesp::DHT22);
   servo.attach(SERVO_PIN, 500, 2400);
+
+  LCD.init();
+  LCD.backlight();
   
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, LOW);
@@ -67,6 +82,8 @@ void loop()
   // Serial.println(isBuzContinous);
 
   adjustServo();
+
+  
 
   mqttClient.publish("TEMP", tempAr);
   delay(100);
@@ -105,17 +122,19 @@ void connectToBroker()
 
       mqttClient.subscribe("Main-ON-OFF");
       delay(10);
-      mqttClient.subscribe("Delay");
+      mqttClient.subscribe("delay");
       delay(10);
-      mqttClient.subscribe("Freq");
+      mqttClient.subscribe("freq");
       delay(10);
       mqttClient.subscribe("dropDown");
       delay(10);
-      mqttClient.subscribe("Min-Angle");
+      mqttClient.subscribe("min-Angle");
       delay(10);
       mqttClient.subscribe("CF");
       delay(10);
-      mqttClient.subscribe("buzz");
+      mqttClient.subscribe("alramTrigger");
+      delay(10);
+      mqttClient.subscribe("dateTime");
       
     }
     else
@@ -157,28 +176,39 @@ void receiveCallback(char *topic, byte *payload, unsigned int length)
     {
       digitalWrite(LED_BUILTIN, HIGH);
       buzzerON = 1;
+      mainON = 1;
     }
     else
     {
       digitalWrite(LED_BUILTIN, LOW);
       buzzerON = 0;
+      mainON = 0;
     }
   }
 
 
 
-  else if (strcmp(topic, "buzz") == 0) // when alarm is tiggered
+  else if (strcmp(topic, "alramTrigger") == 0)
   { // check the topic
     if (length == 1)         // if an alram is triggered the payload length = 1 
         {
            buzzerON = 1;
         }
-    else
+    else if (mainON == 0)  // buzzer is switched off only if the main switch is off
         {
           
           buzzerON = 0;
         }
 
+    
+  }
+
+  else if (strcmp(topic, "dateTime") == 0)
+  { // check the topic
+    date = String(payloadCharAr) ;
+    date = date.substring(0,15);
+    //Serial.println(date.substring(0,15));
+    updateDisplay();
     
   }
 
@@ -198,17 +228,17 @@ void receiveCallback(char *topic, byte *payload, unsigned int length)
     }
   }
 
- else  if (strcmp(topic, "Delay") == 0)
+ else  if (strcmp(topic, "delay") == 0)
   { // check the topic
     Delay = atoi((char *)payload);
   }
 
- else  if (strcmp(topic, "Freq") == 0)
+ else  if (strcmp(topic, "freq") == 0)
   { // check the topic
     Frequency = atoi((char *)payload);
   }
 
-  else if (strcmp(topic, "Min-Angle") == 0)
+  else if (strcmp(topic, "min-Angle") == 0)
   { // check the topic
     minAngle = atoi((char *)payload);
     if (minAngle > 100)
@@ -272,3 +302,21 @@ void adjustServo()
   delay(500);
 }
 
+
+void updateDisplay()
+{
+  LCD.clear();
+  
+  
+    LCD.setCursor(0, 0);
+    LCD.print(date);
+    LCD.setCursor(0, 1);
+    LCD.print(Al1);
+    LCD.setCursor(0, 2);
+    LCD.print(Al2);
+    LCD.setCursor(0, 3);
+    LCD.print(Al3);
+
+  
+  delay(2000);
+}
