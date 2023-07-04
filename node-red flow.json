@@ -1637,18 +1637,19 @@
               "p": "payload"
           }
       ],
-      "repeat": "3",
+      "repeat": "5",
       "crontab": "",
       "once": true,
       "onceDelay": 0.1,
       "topic": "",
       "payload": "",
       "payloadType": "date",
-      "x": 150,
-      "y": 940,
+      "x": 190,
+      "y": 1060,
       "wires": [
           [
-              "5fb41ee6ebc82d07"
+              "5fb41ee6ebc82d07",
+              "695f734cbd1e241e"
           ]
       ]
   },
@@ -2426,50 +2427,6 @@
       "wires": []
   },
   {
-      "id": "a5f099d3e60933e0",
-      "type": "inject",
-      "z": "03278fe65db6b388",
-      "name": "",
-      "props": [
-          {
-              "p": "payload"
-          }
-      ],
-      "repeat": "4",
-      "crontab": "",
-      "once": true,
-      "onceDelay": 0.1,
-      "topic": "",
-      "payload": "",
-      "payloadType": "date",
-      "x": 170,
-      "y": 1200,
-      "wires": [
-          [
-              "544e52ec19ec372a"
-          ]
-      ]
-  },
-  {
-      "id": "544e52ec19ec372a",
-      "type": "function",
-      "z": "03278fe65db6b388",
-      "name": "dateTime",
-      "func": "let date = new Date();\nlet hour = date.getHours();\nlet minute = date.getMinutes();\n\nlet day = date.getDate();\nlet month = date.getMonth() + 1;\nlet year = date.getFullYear();\n\nlet currentDate = `${day}-${month}-${year}  ${hour}:${minute}`;\n\n//Alarm 1\n// 19800000 is the shift with UTC (5.30) which need to be reduced.\n\n\nlet A1_date = new Date(flow.get(\"A1_Time\")- 19800000);\n\n\n//Alarm 2\n\nlet A2_date = new Date(flow.get(\"A2_Time\")- 19800000);\n\n//Alarm 3\n\nlet A3_date = new Date(flow.get(\"A3_Time\")- 19800000);\n\n\nconst A_hours = [A1_date.getHours(), A2_date.getHours(), A3_date.getHours()];\nconst A_minutes = [A1_date.getMinutes(),A2_date.getMinutes(), A3_date.getMinutes() ];\n\n\n\n    // for (let i = 0; i < 3; i++){\n    //     if (A_en[i] && A_hours[i] == hour && A_minutes[i] == minute){\n            \n    //         msg.payload = i;\n    //         alarmTriggered = 1;\n            \n    //         //return msg;\n    //     }\n        \n    // }\n   msg.payload = currentDate ;\n   return msg; \n\n\n\n\n\n\n\n\n\n\n",
-      "outputs": 1,
-      "noerr": 0,
-      "initialize": "",
-      "finalize": "",
-      "libs": [],
-      "x": 460,
-      "y": 1200,
-      "wires": [
-          [
-              "46c4bdaa177523c7"
-          ]
-      ]
-  },
-  {
       "id": "46c4bdaa177523c7",
       "type": "mqtt out",
       "z": "03278fe65db6b388",
@@ -2484,7 +2441,7 @@
       "expiry": "",
       "broker": "7ab67f0d3e4b54f5",
       "x": 740,
-      "y": 1200,
+      "y": 1180,
       "wires": []
   },
   {
@@ -2502,6 +2459,26 @@
       "x": 800,
       "y": 1280,
       "wires": []
+  },
+  {
+      "id": "695f734cbd1e241e",
+      "type": "function",
+      "z": "03278fe65db6b388",
+      "name": "dateTime",
+      "func": "let date = new Date();\nlet hour = date.getHours();\nlet minute = date.getMinutes();\n\nlet day = date.getDate();\nlet month = date.getMonth() + 1;\nlet year = date.getFullYear();\n\nfunction formatTime(hour, minute) {\n  \n  let hourStr = hour.toString();\n  let minuteStr = minute.toString();\n\n  \n  if (hour < 10) {\n    hourStr = \"0\" + hourStr;\n  }\n  if (minute < 10) {\n    minuteStr = \"0\" + minuteStr;\n  }\n\n  \n  let timeStr = hourStr + \":\" + minuteStr;\n\n  return timeStr;\n}\n\n\nfunction formatDate(day, month, year) {\n  // Convert day, month, and year to strings\n  let dayStr = day.toString();\n  let monthStr = month.toString();\n  let yearStr = year.toString();\n\n  // Pad the strings with leading zeros if necessary\n  if (day < 10) {\n    dayStr = \"0\" + dayStr;\n  }\n  if (month < 10) {\n    monthStr = \"0\" + monthStr;\n  }\n\n  // Combine the day, month, and year into a string\n  let dateStr = dayStr + \"/\" + monthStr + \"/\" + yearStr;\n\n  return dateStr;\n}\n\n\n// Alarm 1\n// 19800000 is the shift with UTC (5.30) which need to be reduced.\nlet A1_date = new Date(flow.get(\"A1_Time\")- 19800000);\n\n//Alarm 2\nlet A2_date = new Date(flow.get(\"A2_Time\")- 19800000);\n\n//Alarm 3\nlet A3_date = new Date(flow.get(\"A3_Time\")- 19800000);\n\n\nconst A_hours = [A1_date.getHours(), A2_date.getHours(), A3_date.getHours()];\nconst A_minutes = [A1_date.getMinutes(),A2_date.getMinutes(), A3_date.getMinutes() ];\n\n\n\nlet currentInfo =  formatDate(day, month, year)+ \" \"\n                       + formatTime(hour, minute)+\" \"\n                        + formatTime(A_hours[0], A_minutes[0])+\" \"\n                          +formatTime(A_hours[1], A_minutes[1])+\" \"\n                            +formatTime(A_hours[2], A_minutes[2]);\nmsg.payload = currentInfo ;\nreturn msg; \n\n\n\n\n\n\n\n\n\n\n\n",
+      "outputs": 1,
+      "noerr": 0,
+      "initialize": "",
+      "finalize": "",
+      "libs": [],
+      "x": 500,
+      "y": 1180,
+      "wires": [
+          [
+              "46c4bdaa177523c7",
+              "51870271fc2491cb"
+          ]
+      ]
   },
   {
       "id": "5932fcf52f6182f7",
