@@ -7,3 +7,8 @@ In this project, medibox is connected to the internet and synchronized with a No
 ESP32 is used as the medibox controller and is implemented on the WOKWI platform.
 
 ![](Images/wokwi.png)
+
+
+# Node-Red Dashboard
+![](Images/mainTab.png)
+![](Images/settingsTab.png)
