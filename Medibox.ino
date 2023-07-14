@@ -23,8 +23,9 @@ char humidityAr[6];
 char IntensityAr[6];
 bool buzzerON = 0;
 bool mainON = 0;
+bool isAlarmTriggered = 0;
 bool isBuzContinous = 0;
-int Delay = 1;               // default
+int AlarmDelay = 1;           // default
 int Frequency = 300;         // default
 int minAngle = 30;           // default
 float controlFactor = 0.75;  // default
@@ -39,7 +40,7 @@ String Alarm1;
 String Alarm2;
 String Alarm3;
 
-//String DTar[4] = {date , Al1, Al2,Al3};
+
 
 
 void setup() {
@@ -71,7 +72,7 @@ void loop() {
 
 
 
-  checkBuzzer(Frequency, Delay);
+  checkBuzzer(Frequency, AlarmDelay);
 
 
   adjustServo();
@@ -80,10 +81,10 @@ void loop() {
 
   mqttClient.publish("TEMP", tempAr);
   delay(100);
-  mqttClient.publish("HUMIDITY", humidityAr);
+  mqttClient.publish("HUMI", humidityAr);
   delay(100);
   mqttClient.publish("INTENSITY", IntensityAr);
-  // delay(100);
+  
 }
 
 void setupWiFi() {
@@ -109,7 +110,7 @@ void connectToBroker() {  // subscribe to topics
 
       mqttClient.subscribe("Main-ON-OFF");
       delay(10);
-      mqttClient.subscribe("delay");
+      mqttClient.subscribe("AlarmDelay");
       delay(10);
       mqttClient.subscribe("freq");
       delay(10);
@@ -170,10 +171,15 @@ void receiveCallback(char *topic, byte *payload, unsigned int length) {
     if (length == 1)                              // if an alram is triggered the payload length = 1
     {
       buzzerON = 1;
+      isAlarmTriggered = 1;
     } else if (mainON == 0)  // buzzer is switched off only if the main switch is off
     {
 
       buzzerON = 0;
+      isAlarmTriggered = 0;
+    }
+    else {
+      isAlarmTriggered = 0;
     }
 
 
@@ -199,12 +205,12 @@ void receiveCallback(char *topic, byte *payload, unsigned int length) {
 
     } else {
       isBuzContinous = 1;  //continuous -> no delay
-      Delay = 0;
+      AlarmDelay = 0;
     }
   }
 
-  else if (strcmp(topic, "delay") == 0) {  // check the topic
-    Delay = atoi((char *)payload);
+  else if (strcmp(topic, "AlarmDelay") == 0) {  // check the topic
+    AlarmDelay = atoi((char *)payload);
   }
 
   else if (strcmp(topic, "freq") == 0) {  // check the topic
@@ -229,7 +235,7 @@ void updateIntensity() {
   float LDRvalue = map(LDRreading, 4095, 0, 0, 1000);
   Intensity = LDRvalue / 1000;
   String(Intensity, 4).toCharArray(IntensityAr, 6);
-  Serial.println(Intensity);
+  
 }
 
 void checkBuzzer(unsigned int freq, unsigned int del) {
@@ -238,9 +244,12 @@ void checkBuzzer(unsigned int freq, unsigned int del) {
     if (isBuzContinous == 1)
 
     {
-      for (int i = 0; i < 500; i++) {
+      while (1) {
         tone(BUZZ_PIN, freq);
-        //mqttClient.loop();     // <-- uncomment to continue the buzzer without the loop delay
+        mqttClient.loop();     
+        if (buzzerON == 0 || isAlarmTriggered == 0 ){
+          break ;
+        }
       }
 
 
@@ -286,7 +295,6 @@ void updateDisplay() {
   LCD.print("Alarm3 :  ");
   LCD.setCursor(10, 3);
   LCD.print(Alarm3);
-
 
   //delay(2000);
 }

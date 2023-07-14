@@ -9,7 +9,7 @@
       "id": "dht1",
       "top": -73.33,
       "left": 210.91,
-      "attrs": { "humidity": "76", "temperature": "13.4" }
+      "attrs": { "humidity": "29.5", "temperature": "24.1" }
     },
     {
       "type": "wokwi-photoresistor-sensor",
@@ -54,7 +54,7 @@
     [ "bz1:1", "esp:GND.1", "black", [ "h-60.56", "v244.21" ] ],
     [ "bz1:2", "esp:D4", "gray", [ "h-44.36", "v212.72" ] ],
     [ "servo1:GND", "esp:GND.1", "black", [ "v0" ] ],
-    [ "servo1:V+", "esp:VIN", "red", [ "v238.45", "h-418.14", "v-65.97" ] ],
+    [ "servo1:V+", "esp:VIN", "red", [ "v238.45", "h-423.9", "v-64.27" ] ],
     [ "servo1:PWM", "esp:D18", "green", [ "v10.42", "h-283.05", "v22.49" ] ],
     [ "lcd1:GND", "esp:GND.1", "black", [ "h-82.21", "v-69.61", "h359.9", "v-100.76" ] ],
     [ "lcd1:VCC", "esp:3V3", "red", [ "h-74.73", "v-84.54", "h347.28", "v-85.75" ] ],

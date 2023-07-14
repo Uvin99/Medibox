@@ -3,7 +3,6 @@ let hour = date.getHours();
 let minute = date.getMinutes();
 let schedule = flow.get("schedule");
 let days = flow.get("days");
-let alarmTriggered = 0;
 
 //Alarm 1
 // 19800000 is the shift with UTC (5.30) which need to be reduced.
@@ -30,13 +29,12 @@ if (schedule && days > 0) {
         if (A_en[i] && A_hours[i] == hour && A_minutes[i] == minute) {
 
             msg.payload = i;
-            alarmTriggered = 1;
 
-            //return msg;
         }
 
+
     }
-    msg.trig = alarmTriggered
+
     return msg;
 }
 
