@@ -1,5 +1,5 @@
 # Medibox
-EN3240: Embedded Systems Engineering.  Assignment 2 - IoT project
+EN3240: Embedded Systems Engineering - IoT project
 
 
 Medibox is a smart IoT device designed to help users manage their medications effectively.
